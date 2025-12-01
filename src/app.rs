@@ -1,4 +1,4 @@
-use eframe::egui::{self, Visuals};
+use eframe::egui::{self, CentralPanel, SidePanel, TopBottomPanel, Ui, Visuals};
 
 use crate::scene::Scene;
 
@@ -22,7 +22,7 @@ impl eframe::App for ColorsApp {
             style.visuals = Visuals::dark();
         });
 
-        egui::TopBottomPanel::top("menu").show(ctx, |ui| {
+        TopBottomPanel::top("top_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Quit").clicked() {
@@ -31,5 +31,74 @@ impl eframe::App for ColorsApp {
                 });
             });
         });
+
+        TopBottomPanel::bottom("processed")
+            .min_height(300.0)
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.columns(3, |cols| {
+                    cols[0].group(|ui| {
+                        ui.heading("Reduced using propagation of uncertainty");
+                        ui.separator();
+                        ui.label("Select filter matrix:");
+                        ui.radio_value(&mut 0, 0, "Floyd-Steinberg");
+                        ui.radio_value(&mut 0, 1, "Burkes");
+                        ui.radio_value(&mut 0, 2, "Stucky");
+
+                        ui.add_space(5.0);
+                        ui.label("Preview");
+                        ui.allocate_space(ui.available_size());
+                    });
+
+                    cols[1].group(|ui| {
+                        ui.heading("Reduced using popularity algorithm");
+                        ui.separator();
+                        ui.label("Preview");
+                        ui.allocate_space(ui.available_size());
+                    });
+
+                    cols[2].group(|ui| {
+                        ui.heading("Reduced using k-means algorithm");
+                        ui.separator();
+                        ui.label("Epsilon value: 11");
+                        ui.add(egui::Slider::new(&mut 11, 1..=50));
+                        ui.label("Preview");
+                        ui.allocate_space(ui.available_size());
+                    });
+                });
+            });
+
+        SidePanel::right("thumbnails")
+            .resizable(false)
+            .min_width(200.0)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    image_row(ui);
+                    image_row(ui);
+                    image_row(ui);
+                });
+            });
+
+        CentralPanel::default().show(ctx, |ui| {
+            ui.vertical(|ui| {
+                ui.group(|ui| {
+                    ui.label("Main image preview area");
+                    ui.allocate_space(ui.available_size());
+                });
+            });
+        });
     }
+}
+
+fn image_row(ui: &mut Ui) {
+    ui.horizontal(|ui| {
+        ui.group(|ui| {
+            ui.label("Thumb A");
+            ui.allocate_space([80.0, 60.0].into());
+        });
+        ui.group(|ui| {
+            ui.label("Thumb B");
+            ui.allocate_space([80.0, 60.0].into());
+        });
+    });
 }
