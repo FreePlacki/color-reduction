@@ -6,6 +6,13 @@ use eframe::{
 pub struct Scene {
     pub available_images: Vec<TextureHandle>,
     selected_image: usize,
+    /// # of colors in transformed images
+    n_colors: u32,
+
+    // transformed images
+    uncert_image: TextureHandle,
+    popula_image: TextureHandle,
+    kmeans_image: TextureHandle,
 }
 
 impl Scene {
@@ -19,6 +26,10 @@ impl Scene {
         Self {
             available_images,
             selected_image: 0,
+            n_colors: 10,
+            uncert_image: Self::reduce_uncertainty(orig_texture.clone()),
+            popula_image: Self::reduce_uncertainty(orig_texture.clone()),
+            kmeans_image: Self::reduce_uncertainty(orig_texture.clone()),
         }
     }
 
@@ -35,9 +46,32 @@ impl Scene {
 
     pub fn select_main_image(&mut self, index: usize) {
         self.selected_image = index;
+        self.uncert_image = Self::reduce_uncertainty(self.main_image().clone());
+        self.popula_image = Self::reduce_uncertainty(self.main_image().clone());
+        self.kmeans_image = Self::reduce_uncertainty(self.main_image().clone());
     }
 
     pub fn main_image(&self) -> &TextureHandle {
         &self.available_images[self.selected_image]
+    }
+
+    pub fn n_colors_mut(&mut self) -> &mut u32 {
+        &mut self.n_colors
+    }
+
+    fn reduce_uncertainty(img: TextureHandle) -> TextureHandle {
+        img
+    }
+
+    pub fn uncert_image(&self) -> &TextureHandle {
+        &self.uncert_image
+    }
+
+    pub fn popula_image(&self) -> &TextureHandle {
+        &self.popula_image
+    }
+
+    pub fn kmeans_image(&self) -> &TextureHandle {
+        &self.kmeans_image
     }
 }
