@@ -1,4 +1,7 @@
-use eframe::{CreationContext, egui::{self, CentralPanel, SidePanel, TopBottomPanel, Ui, Visuals}};
+use eframe::{
+    CreationContext,
+    egui::{self, CentralPanel, Sense, SidePanel, TopBottomPanel, Ui, Visuals},
+};
 
 use crate::scene::Scene;
 
@@ -10,6 +13,25 @@ impl ColorsApp {
     pub fn new(cc: &CreationContext) -> Self {
         let scene = Scene::new(cc);
         Self { scene }
+    }
+
+    fn image_row(&mut self, ui: &mut Ui) {
+        let mut selected_idx = None;
+        for (i, texture) in self.scene.available_images.iter().enumerate() {
+            if ui
+                .add(
+                    egui::Image::new(texture)
+                        .max_size(ui.available_size())
+                        .sense(Sense::click()),
+                )
+                .clicked()
+            {
+                selected_idx = Some(i);
+            }
+        }
+        if let Some(i) = selected_idx {
+            self.scene.select_main_image(i);
+        }
     }
 }
 
@@ -69,13 +91,12 @@ impl eframe::App for ColorsApp {
             });
 
         SidePanel::right("thumbnails")
-            .resizable(false)
+            .resizable(true)
             .min_width(200.0)
+            .max_width(500.0)
             .show(ctx, |ui| {
                 ui.vertical(|ui| {
-                    image_row(ui);
-                    image_row(ui);
-                    image_row(ui);
+                    self.image_row(ui);
                 });
             });
 
@@ -83,23 +104,9 @@ impl eframe::App for ColorsApp {
             ui.vertical(|ui| {
                 ui.group(|ui| {
                     ui.label("Main image preview area");
-                    ui.add(egui::Image::new(&self.scene.orig_image).max_size(ui.available_size()));
-                    // ui.image(&self.scene.orig_image);
+                    ui.add(egui::Image::new(self.scene.main_image()).max_size(ui.available_size()));
                 });
             });
         });
     }
-}
-
-fn image_row(ui: &mut Ui) {
-    ui.horizontal(|ui| {
-        ui.group(|ui| {
-            ui.label("Thumb A");
-            ui.allocate_space([80.0, 60.0].into());
-        });
-        ui.group(|ui| {
-            ui.label("Thumb B");
-            ui.allocate_space([80.0, 60.0].into());
-        });
-    });
 }
