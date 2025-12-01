@@ -6,13 +6,11 @@ mod app;
 mod scene;
 
 fn main() -> eframe::Result {
-    let app = ColorsApp::new();
-
     let mut native_options = eframe::NativeOptions::default();
     native_options.viewport = native_options.viewport.with_maximized(true);
     eframe::run_native(
         "Color reduction",
         native_options,
-        Box::new(|_| Ok(Box::new(app))),
+        Box::new(|cc| Ok(Box::new(ColorsApp::new(cc)))),
     )
 }

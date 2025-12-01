@@ -1,4 +1,4 @@
-use eframe::egui::{self, CentralPanel, SidePanel, TopBottomPanel, Ui, Visuals};
+use eframe::{CreationContext, egui::{self, CentralPanel, SidePanel, TopBottomPanel, Ui, Visuals}};
 
 use crate::scene::Scene;
 
@@ -7,8 +7,8 @@ pub struct ColorsApp {
 }
 
 impl ColorsApp {
-    pub fn new() -> Self {
-        let scene = Scene::default();
+    pub fn new(cc: &CreationContext) -> Self {
+        let scene = Scene::new(cc);
         Self { scene }
     }
 }
@@ -83,7 +83,8 @@ impl eframe::App for ColorsApp {
             ui.vertical(|ui| {
                 ui.group(|ui| {
                     ui.label("Main image preview area");
-                    ui.allocate_space(ui.available_size());
+                    ui.add(egui::Image::new(&self.scene.orig_image).max_size(ui.available_size()));
+                    // ui.image(&self.scene.orig_image);
                 });
             });
         });
