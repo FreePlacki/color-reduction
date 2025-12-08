@@ -3,7 +3,7 @@ use eframe::{
     egui::{self, CentralPanel, Sense, SidePanel, Slider, TopBottomPanel, Ui, Visuals},
 };
 
-use crate::scene::Scene;
+use crate::{scene::Scene, uncert_reducer::DiffusionMatrix};
 
 pub struct ColorsApp {
     scene: Scene,
@@ -17,10 +17,10 @@ impl ColorsApp {
 
     fn image_row(&mut self, ui: &mut Ui) {
         let mut selected_idx = None;
-        for (i, texture) in self.scene.available_images.iter().enumerate() {
+        for (i, img) in self.scene.available_images.iter().enumerate() {
             if ui
                 .add(
-                    egui::Image::new(texture)
+                    egui::Image::new(&img.texture)
                         .max_size(ui.available_size())
                         .sense(Sense::click()),
                 )
@@ -30,7 +30,7 @@ impl ColorsApp {
             }
         }
         if let Some(i) = selected_idx {
-            self.scene.select_main_image(i);
+            self.scene.select_main_image(i, ui.ctx());
         }
     }
 }
@@ -52,7 +52,9 @@ impl eframe::App for ColorsApp {
                     }
                 });
                 ui.label("Colors:");
-                ui.add(Slider::new(self.scene.n_colors_mut(), 1..=50));
+                let mut n = self.scene.n_colors();
+                ui.add(Slider::new(&mut n, 1..=500).logarithmic(true));
+                self.scene.update_n_colors(n, ctx);
             });
         });
 
@@ -66,9 +68,23 @@ impl eframe::App for ColorsApp {
                         ui.separator();
                         ui.horizontal(|ui| {
                             ui.label("Select filter matrix:");
-                            ui.radio_value(&mut 0, 0, "Floyd-Steinberg");
-                            ui.radio_value(&mut 0, 1, "Burkes");
-                            ui.radio_value(&mut 0, 2, "Stucky");
+                            let mut m = self.scene.diffusion_matrix();
+                            ui.radio_value(
+                                &mut m,
+                                DiffusionMatrix::FloydSteinberg,
+                                "Floyd-Steinberg",
+                            );
+                            ui.radio_value(
+                                &mut m,
+                                DiffusionMatrix::Burkes,
+                                "Burkes",
+                            );
+                            ui.radio_value(
+                                &mut m,
+                                DiffusionMatrix::Stucky,
+                                "Stucky",
+                            );
+                            self.scene.update_diffusion_matrix(m, ctx);
                         });
 
                         ui.add(
@@ -80,6 +96,7 @@ impl eframe::App for ColorsApp {
                     cols[1].group(|ui| {
                         ui.heading("Reduced using popularity algorithm");
                         ui.separator();
+                        ui.label("");
                         ui.add(
                             egui::Image::new(self.scene.popula_image())
                                 .max_size(ui.available_size()),

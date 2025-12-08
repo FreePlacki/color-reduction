@@ -4,6 +4,8 @@ use crate::app::ColorsApp;
 
 mod app;
 mod scene;
+mod reducer;
+mod uncert_reducer;
 
 fn main() -> eframe::Result {
     let mut native_options = eframe::NativeOptions::default();
