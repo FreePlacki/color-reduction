@@ -4,6 +4,7 @@ use eframe::{
 };
 
 use crate::{
+    popularity_reducer::PopularityReducer,
     reducer::Reducer,
     uncert_reducer::{DiffusionMatrix, UncertReducer},
 };
@@ -45,7 +46,7 @@ impl Scene {
             popula_image: orig_texture.texture.clone(),
             kmeans_image: orig_texture.texture,
         };
-        s.compute_uncert(&cc.egui_ctx);
+        s.compute_all(&cc.egui_ctx);
 
         s
     }
@@ -98,6 +99,7 @@ impl Scene {
 
     fn compute_all(&mut self, ctx: &egui::Context) {
         self.compute_uncert(ctx);
+        self.compute_popula(ctx);
     }
 
     fn compute_uncert(&mut self, ctx: &egui::Context) {
@@ -112,6 +114,20 @@ impl Scene {
 
         let col = eframe::epaint::ColorImage::from_rgba_unmultiplied(img.texture.size(), &out);
         self.uncert_image = ctx.load_texture("uncert-computed", col, Default::default());
+    }
+
+    fn compute_popula(&mut self, ctx: &egui::Context) {
+        let img = &self.available_images[self.selected_image];
+        let (w, h) = {
+            let s = img.texture.size();
+            (s[0], s[1])
+        };
+
+        let uncert = PopularityReducer::new(self.n_colors);
+        let out = uncert.reduce(&img.rgba, w, h);
+
+        let col = eframe::epaint::ColorImage::from_rgba_unmultiplied(img.texture.size(), &out);
+        self.popula_image = ctx.load_texture("popula-computed", col, Default::default());
     }
 
     pub fn uncert_image(&self) -> &TextureHandle {

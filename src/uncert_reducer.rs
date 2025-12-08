@@ -68,6 +68,7 @@ pub struct Palette {
 }
 
 impl Palette {
+    // TODO: probably incorrect!
     pub fn new(n: usize) -> Self {
         let mut div_r = 1;
         let mut div_g = 1;

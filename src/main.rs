@@ -6,6 +6,7 @@ mod app;
 mod scene;
 mod reducer;
 mod uncert_reducer;
+mod popularity_reducer;
 
 fn main() -> eframe::Result {
     let mut native_options = eframe::NativeOptions::default();
