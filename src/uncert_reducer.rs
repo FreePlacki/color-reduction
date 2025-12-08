@@ -55,41 +55,67 @@ impl Reducer for UncertReducer {
 impl UncertReducer {
     pub fn with_uniform_palette(num_colors: usize, matrix: DiffusionMatrix) -> Self {
         Self {
-            palette: Palette::Uniform(num_colors),
+            palette: Palette::new(num_colors),
             matrix,
         }
     }
 }
 
-pub enum Palette {
-    Uniform(usize),
+pub struct Palette {
+    div_r: usize,
+    div_g: usize,
+    div_b: usize,
 }
 
 impl Palette {
-    pub fn nearest_color(&self, px: [f32; 3]) -> [u8; 3] {
-        match *self {
-            Palette::Uniform(n) => {
-                let levels = (n as f32).cbrt().ceil() as usize;
-                let maxv = (levels - 1) as f32;
+    pub fn new(n: usize) -> Self {
+        let mut div_r = 1;
+        let mut div_g = 1;
+        let mut div_b = 1;
 
-                let rf = (px[0] / 255.0) * maxv;
-                let gf = (px[1] / 255.0) * maxv;
-                let bf = (px[2] / 255.0) * maxv;
-
-                let r_i = rf.round().clamp(0.0, maxv);
-                let g_i = gf.round().clamp(0.0, maxv);
-                let b_i = bf.round().clamp(0.0, maxv);
-
-                let r = (r_i / maxv * 255.0) as u8;
-                let g = (g_i / maxv * 255.0) as u8;
-                let b = (b_i / maxv * 255.0) as u8;
-
-                [r, g, b]
+        let mut k = n;
+        while k > 1 {
+            if div_r <= div_g && div_r <= div_b {
+                div_r += 1;
+            } else if div_g <= div_b {
+                div_g += 1;
+            } else {
+                div_b += 1;
             }
+            k -= 1;
+        }
+
+        Palette {
+            div_r,
+            div_g,
+            div_b,
         }
     }
-}
 
+    fn center_of(&self, ri: usize, gi: usize, bi: usize) -> [u8; 3] {
+        let rf = (ri as f32 + 0.5) / self.div_r as f32;
+        let gf = (gi as f32 + 0.5) / self.div_g as f32;
+        let bf = (bi as f32 + 0.5) / self.div_b as f32;
+
+        [(rf * 255.0) as u8, (gf * 255.0) as u8, (bf * 255.0) as u8]
+    }
+
+    pub fn nearest_color(&self, px: [f32; 3]) -> [u8; 3] {
+        let ri = (px[0].clamp(0.0, 1.0) * self.div_r as f32)
+            .floor()
+            .clamp(0.0, (self.div_r - 1) as f32) as usize;
+
+        let gi = (px[1].clamp(0.0, 1.0) * self.div_g as f32)
+            .floor()
+            .clamp(0.0, (self.div_g - 1) as f32) as usize;
+
+        let bi = (px[2].clamp(0.0, 1.0) * self.div_b as f32)
+            .floor()
+            .clamp(0.0, (self.div_b - 1) as f32) as usize;
+
+        self.center_of(ri, gi, bi)
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum DiffusionMatrix {
