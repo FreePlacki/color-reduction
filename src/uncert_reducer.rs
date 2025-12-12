@@ -1,12 +1,13 @@
 use crate::reducer::Reducer;
 
 pub struct UncertReducer {
-    palette: Palette,
     matrix: DiffusionMatrix,
 }
 
 impl Reducer for UncertReducer {
-    fn reduce(&self, rgba: &[u8], width: usize, height: usize) -> Vec<u8> {
+    fn reduce(&self, rgba: &[u8], width: usize, height: usize, num_colors: usize) -> Vec<u8> {
+        let palette = Palette::new(num_colors);
+
         let mut buf: Vec<[f32; 3]> = rgba
             .chunks_exact(4)
             .map(|px| [px[0] as f32, px[1] as f32, px[2] as f32])
@@ -21,7 +22,7 @@ impl Reducer for UncertReducer {
                 old[1] = old[1].clamp(0.0, 255.0);
                 old[2] = old[2].clamp(0.0, 255.0);
 
-                let new = self.palette.nearest_color(old);
+                let new = palette.nearest_color(old);
 
                 let err = [old[0] - new[0], old[1] - new[1], old[2] - new[2]];
 
@@ -53,11 +54,8 @@ impl Reducer for UncertReducer {
 }
 
 impl UncertReducer {
-    pub fn with_uniform_palette(num_colors: usize, matrix: DiffusionMatrix) -> Self {
-        Self {
-            palette: Palette::new(num_colors),
-            matrix,
-        }
+    pub fn with_uniform_palette(matrix: DiffusionMatrix) -> Self {
+        Self { matrix }
     }
 }
 
