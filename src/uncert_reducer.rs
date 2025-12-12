@@ -16,15 +16,16 @@ impl Reducer for UncertReducer {
             for x in 0..width {
                 let idx = y * width + x;
 
-                let old = buf[idx];
-                let new = self.palette.nearest_color(old);
-                let err = [
-                    old[0] - new[0] as f32,
-                    old[1] - new[1] as f32,
-                    old[2] - new[2] as f32,
-                ];
+                let mut old = buf[idx];
+                old[0] = old[0].clamp(0.0, 255.0);
+                old[1] = old[1].clamp(0.0, 255.0);
+                old[2] = old[2].clamp(0.0, 255.0);
 
-                buf[idx] = [new[0] as f32, new[1] as f32, new[2] as f32];
+                let new = self.palette.nearest_color(old);
+
+                let err = [old[0] - new[0], old[1] - new[1], old[2] - new[2]];
+
+                buf[idx] = new;
 
                 for &(dx, dy, weight) in self.matrix.matrix() {
                     let nx = x as i32 + dx;
@@ -40,7 +41,6 @@ impl Reducer for UncertReducer {
             }
         }
 
-        // Convert back into RGBA8
         let mut out = vec![0u8; width * height * 4];
         for (i, px) in buf.iter().enumerate() {
             out[i * 4 + 0] = px[0].clamp(0.0, 255.0) as u8;
@@ -68,7 +68,6 @@ pub struct Palette {
 }
 
 impl Palette {
-    // TODO: probably incorrect!
     pub fn new(n: usize) -> Self {
         let mut div_r = 1;
         let mut div_g = 1;
@@ -93,25 +92,29 @@ impl Palette {
         }
     }
 
-    fn center_of(&self, ri: usize, gi: usize, bi: usize) -> [u8; 3] {
-        let rf = (ri as f32 + 0.5) / self.div_r as f32;
-        let gf = (gi as f32 + 0.5) / self.div_g as f32;
-        let bf = (bi as f32 + 0.5) / self.div_b as f32;
-
-        [(rf * 255.0) as u8, (gf * 255.0) as u8, (bf * 255.0) as u8]
+    fn center_of(&self, ri: usize, gi: usize, bi: usize) -> [f32; 3] {
+        [
+            (ri as f32 + 0.5) / self.div_r as f32 * 255.0,
+            (gi as f32 + 0.5) / self.div_g as f32 * 255.0,
+            (bi as f32 + 0.5) / self.div_b as f32 * 255.0,
+        ]
     }
 
-    pub fn nearest_color(&self, px: [f32; 3]) -> [u8; 3] {
-        let ri = (px[0].clamp(0.0, 1.0) * self.div_r as f32)
-            .floor()
+    pub fn nearest_color(&self, px: [f32; 3]) -> [f32; 3] {
+        let r = px[0].clamp(0.0, 255.0) / 255.0;
+        let g = px[1].clamp(0.0, 255.0) / 255.0;
+        let b = px[2].clamp(0.0, 255.0) / 255.0;
+
+        let ri = ((r * self.div_r as f32) - 0.5)
+            .round()
             .clamp(0.0, (self.div_r - 1) as f32) as usize;
 
-        let gi = (px[1].clamp(0.0, 1.0) * self.div_g as f32)
-            .floor()
+        let gi = ((g * self.div_g as f32) - 0.5)
+            .round()
             .clamp(0.0, (self.div_g - 1) as f32) as usize;
 
-        let bi = (px[2].clamp(0.0, 1.0) * self.div_b as f32)
-            .floor()
+        let bi = ((b * self.div_b as f32) - 0.5)
+            .round()
             .clamp(0.0, (self.div_b - 1) as f32) as usize;
 
         self.center_of(ri, gi, bi)
