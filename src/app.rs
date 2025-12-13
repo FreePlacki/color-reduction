@@ -51,7 +51,7 @@ impl eframe::App for ColorsApp {
                 });
                 ui.label("Colors:");
                 let mut n = self.scene.n_colors();
-                ui.add(Slider::new(&mut n, 1..=400).logarithmic(true));
+                ui.add(Slider::new(&mut n, 1..=100).logarithmic(true));
                 self.scene.update_n_colors(n, ctx);
             });
         });
@@ -72,16 +72,8 @@ impl eframe::App for ColorsApp {
                                 DiffusionMatrix::FloydSteinberg,
                                 "Floyd-Steinberg",
                             );
-                            ui.radio_value(
-                                &mut m,
-                                DiffusionMatrix::Burkes,
-                                "Burkes",
-                            );
-                            ui.radio_value(
-                                &mut m,
-                                DiffusionMatrix::Stucky,
-                                "Stucky",
-                            );
+                            ui.radio_value(&mut m, DiffusionMatrix::Burkes, "Burkes");
+                            ui.radio_value(&mut m, DiffusionMatrix::Stucky, "Stucky");
                             self.scene.update_diffusion_matrix(m, ctx);
                         });
 
@@ -105,8 +97,10 @@ impl eframe::App for ColorsApp {
                         ui.heading("Reduced using k-means algorithm");
                         ui.separator();
                         ui.horizontal(|ui| {
-                            ui.label("Epsilon value: 11");
-                            ui.add(egui::Slider::new(&mut 11, 1..=50));
+                            ui.label("Epsilon value: ");
+                            let mut eps = self.scene.kmeans_eps();
+                            ui.add(egui::Slider::new(&mut eps, 1.0..=10.0).logarithmic(true));
+                            self.scene.update_kmeans_eps(ctx, eps);
                         });
                         ui.add(
                             egui::Image::new(self.scene.kmeans_image())

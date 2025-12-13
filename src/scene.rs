@@ -4,9 +4,7 @@ use eframe::{
 };
 
 use crate::{
-    popularity_reducer::PopularityReducer,
-    reducer::Reducer,
-    uncert_reducer::{DiffusionMatrix, UncertReducer},
+    kmeans_reducer::KMeansReducer, popularity_reducer::PopularityReducer, reducer::Reducer, uncert_reducer::{DiffusionMatrix, UncertReducer}
 };
 
 #[derive(Clone)]
@@ -28,6 +26,9 @@ pub struct Scene {
     popula_image: TextureHandle,
     kmeans_image: TextureHandle,
 
+    /// kmeans stop condition parameter
+    kmeans_eps: f32,
+
     popula_reducer: Option<PopularityReducer>,
 }
 
@@ -47,6 +48,7 @@ impl Scene {
             uncert_image: orig_texture.texture.clone(),
             popula_image: orig_texture.texture.clone(),
             kmeans_image: orig_texture.texture,
+            kmeans_eps: 50.0,
             popula_reducer: None,
         };
         s.compute_all(&cc.egui_ctx, true);
@@ -102,12 +104,14 @@ impl Scene {
 
     fn compute_all(&mut self, ctx: &egui::Context, image_changed: bool) {
         self.compute_uncert(ctx);
-        if image_changed {
+        // TODO
+        if true || image_changed {
             self.popula_reducer = Some(PopularityReducer::new(
                 &self.available_images[self.selected_image].rgba,
             ));
         }
         self.compute_popula(ctx);
+        self.compute_kmeans(ctx);
     }
 
     fn compute_uncert(&mut self, ctx: &egui::Context) {
@@ -141,6 +145,20 @@ impl Scene {
         self.popula_image = ctx.load_texture("popula-computed", col, Default::default());
     }
 
+    fn compute_kmeans(&mut self, ctx: &egui::Context) {
+        let img = &self.available_images[self.selected_image];
+        let (w, h) = {
+            let s = img.texture.size();
+            (s[0], s[1])
+        };
+
+        let reducer = KMeansReducer::new(&img.rgba, self.kmeans_eps);
+        let out = reducer.reduce(&img.rgba, w, h, self.n_colors);
+
+        let col = eframe::epaint::ColorImage::from_rgba_unmultiplied(img.texture.size(), &out);
+        self.kmeans_image = ctx.load_texture("kmeans-computed", col, Default::default());
+    }
+
     pub fn uncert_image(&self) -> &TextureHandle {
         &self.uncert_image
     }
@@ -151,5 +169,17 @@ impl Scene {
 
     pub fn kmeans_image(&self) -> &TextureHandle {
         &self.kmeans_image
+    }
+
+    pub fn kmeans_eps(&self) -> f32 {
+        self.kmeans_eps
+    }
+
+    pub fn update_kmeans_eps(&mut self, ctx: &egui::Context, eps: f32) {
+        if eps == self.kmeans_eps {
+            return;
+        }
+        self.kmeans_eps = eps;
+        self.compute_kmeans(ctx);
     }
 }
