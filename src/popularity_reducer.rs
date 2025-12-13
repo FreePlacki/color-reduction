@@ -64,10 +64,6 @@ impl PopularityReducer {
     }
 
     fn ensure_lut(&self, num_colors: usize) {
-        if self.lut_colors.get() == num_colors {
-            return;
-        }
-
         let palette = self.build_palette(num_colors);
         let mut lut = vec![[0u8; 3]; LUT_SIZE];
 

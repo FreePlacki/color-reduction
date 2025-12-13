@@ -4,7 +4,10 @@ use eframe::{
 };
 
 use crate::{
-    kmeans_reducer::KMeansReducer, popularity_reducer::PopularityReducer, reducer::Reducer, uncert_reducer::{DiffusionMatrix, UncertReducer}
+    kmeans_reducer::KMeansReducer,
+    popularity_reducer::PopularityReducer,
+    reducer::Reducer,
+    uncert_reducer::{DiffusionMatrix, UncertReducer},
 };
 
 #[derive(Clone)]
@@ -28,8 +31,6 @@ pub struct Scene {
 
     /// kmeans stop condition parameter
     kmeans_eps: f32,
-
-    popula_reducer: Option<PopularityReducer>,
 }
 
 impl Scene {
@@ -49,9 +50,8 @@ impl Scene {
             popula_image: orig_texture.texture.clone(),
             kmeans_image: orig_texture.texture,
             kmeans_eps: 50.0,
-            popula_reducer: None,
         };
-        s.compute_all(&cc.egui_ctx, true);
+        s.compute_all(&cc.egui_ctx);
 
         s
     }
@@ -69,7 +69,7 @@ impl Scene {
 
     pub fn select_main_image(&mut self, index: usize, ctx: &egui::Context) {
         self.selected_image = index;
-        self.compute_all(ctx, true);
+        self.compute_all(ctx);
     }
 
     pub fn main_image(&self) -> &TextureHandle {
@@ -86,7 +86,7 @@ impl Scene {
         }
 
         self.n_colors = n;
-        self.compute_all(ctx, false);
+        self.compute_all(ctx);
     }
 
     pub fn diffusion_matrix(&self) -> DiffusionMatrix {
@@ -102,14 +102,8 @@ impl Scene {
         self.compute_uncert(ctx);
     }
 
-    fn compute_all(&mut self, ctx: &egui::Context, image_changed: bool) {
+    fn compute_all(&mut self, ctx: &egui::Context) {
         self.compute_uncert(ctx);
-        // TODO
-        if true || image_changed {
-            self.popula_reducer = Some(PopularityReducer::new(
-                &self.available_images[self.selected_image].rgba,
-            ));
-        }
         self.compute_popula(ctx);
         self.compute_kmeans(ctx);
     }
@@ -135,11 +129,8 @@ impl Scene {
             (s[0], s[1])
         };
 
-        let out = self
-            .popula_reducer
-            .as_ref()
-            .unwrap()
-            .reduce(&img.rgba, w, h, self.n_colors);
+        let reducer = PopularityReducer::new(&self.available_images[self.selected_image].rgba);
+        let out = reducer.reduce(&img.rgba, w, h, self.n_colors);
 
         let col = eframe::epaint::ColorImage::from_rgba_unmultiplied(img.texture.size(), &out);
         self.popula_image = ctx.load_texture("popula-computed", col, Default::default());

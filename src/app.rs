@@ -99,7 +99,7 @@ impl eframe::App for ColorsApp {
                         ui.horizontal(|ui| {
                             ui.label("Epsilon value: ");
                             let mut eps = self.scene.kmeans_eps();
-                            ui.add(egui::Slider::new(&mut eps, 1.0..=10.0).logarithmic(true));
+                            ui.add(egui::Slider::new(&mut eps, 10.0..=50.0).logarithmic(true));
                             self.scene.update_kmeans_eps(ctx, eps);
                         });
                         ui.add(
