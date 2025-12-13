@@ -35,8 +35,6 @@ impl ColorsApp {
     }
 }
 
-impl ColorsApp {}
-
 impl eframe::App for ColorsApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         ctx.style_mut(|style| {
@@ -53,7 +51,7 @@ impl eframe::App for ColorsApp {
                 });
                 ui.label("Colors:");
                 let mut n = self.scene.n_colors();
-                ui.add(Slider::new(&mut n, 1..=500).logarithmic(true));
+                ui.add(Slider::new(&mut n, 1..=400).logarithmic(true));
                 self.scene.update_n_colors(n, ctx);
             });
         });
@@ -123,6 +121,7 @@ impl eframe::App for ColorsApp {
             .min_width(200.0)
             .max_width(500.0)
             .show(ctx, |ui| {
+                ui.label("Choose image");
                 ui.vertical(|ui| {
                     self.image_row(ui);
                 });
@@ -131,7 +130,7 @@ impl eframe::App for ColorsApp {
         CentralPanel::default().show(ctx, |ui| {
             ui.vertical(|ui| {
                 ui.group(|ui| {
-                    ui.label("Main image preview area");
+                    ui.label("Original image");
                     ui.add(egui::Image::new(self.scene.main_image()).max_size(ui.available_size()));
                 });
             });
