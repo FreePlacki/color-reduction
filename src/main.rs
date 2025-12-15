@@ -5,6 +5,7 @@ use crate::app::ColorsApp;
 mod app;
 mod scene;
 mod reducer;
+mod worker;
 mod uncert_reducer;
 mod popularity_reducer;
 mod kmeans_reducer;

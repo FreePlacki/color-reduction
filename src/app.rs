@@ -74,7 +74,7 @@ impl eframe::App for ColorsApp {
                             );
                             ui.radio_value(&mut m, DiffusionMatrix::Burkes, "Burkes");
                             ui.radio_value(&mut m, DiffusionMatrix::Stucky, "Stucky");
-                            self.scene.update_diffusion_matrix(m, ctx);
+                            self.scene.update_diffusion_matrix(m);
                         });
 
                         ui.add(
@@ -100,7 +100,7 @@ impl eframe::App for ColorsApp {
                             ui.label("Epsilon value: ");
                             let mut eps = self.scene.kmeans_eps();
                             ui.add(egui::Slider::new(&mut eps, 10.0..=50.0).logarithmic(true));
-                            self.scene.update_kmeans_eps(ctx, eps);
+                            self.scene.update_kmeans_eps(eps);
                         });
                         ui.add(
                             egui::Image::new(self.scene.kmeans_image())
@@ -129,5 +129,8 @@ impl eframe::App for ColorsApp {
                 });
             });
         });
+
+        self.scene.poll_results(ctx);
+        ctx.request_repaint();
     }
 }
