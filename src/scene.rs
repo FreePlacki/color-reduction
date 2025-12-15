@@ -4,6 +4,7 @@ use eframe::{
     CreationContext,
     egui::{self, ColorImage, Context, TextureHandle},
 };
+use image::{ColorType, ImageBuffer, Rgb, Rgba};
 
 use crate::{
     kmeans_reducer::KMeansReducer,
@@ -31,6 +32,12 @@ pub struct Scene {
     popula_image: TextureHandle,
     kmeans_image: TextureHandle,
 
+    uncert_vec: Vec<u8>,
+    popula_vec: Vec<u8>,
+    kmeans_vec: Vec<u8>,
+    img_width: usize,
+    img_height: usize,
+
     /// kmeans stop condition parameter
     kmeans_eps: f32,
 
@@ -56,6 +63,11 @@ impl Scene {
             popula_image: orig_texture.texture.clone(),
             kmeans_image: orig_texture.texture,
             kmeans_eps: 50.0,
+            img_width: 0,
+            img_height: 0,
+            uncert_vec: vec![],
+            popula_vec: vec![],
+            kmeans_vec: vec![],
             worker: ComputeWorker::spawn(),
         };
         s.compute_all(&cc.egui_ctx);
@@ -68,13 +80,13 @@ impl Scene {
         let rgba = img.to_rgba8().to_vec();
         let size = [img.width() as usize, img.height() as usize];
         let color_image = ColorImage::from_rgba_unmultiplied(size, &rgba);
-        let texture = ctx
-            .load_texture("orig_image", color_image, Default::default());
+        let texture = ctx.load_texture("orig_image", color_image, Default::default());
         LoadedImage { texture, rgba }
     }
 
     pub fn add_image(&mut self, ctx: &Context, path: PathBuf) {
-        self.available_images.push(Self::open_image(ctx, path.to_str().unwrap()));
+        self.available_images
+            .push(Self::open_image(ctx, path.to_str().unwrap()));
     }
 
     pub fn select_main_image(&mut self, index: usize, ctx: &egui::Context) {
@@ -120,15 +132,20 @@ impl Scene {
             if let Some(uncert) = res.uncert {
                 let col = eframe::epaint::ColorImage::from_rgba_unmultiplied(size, &uncert);
                 self.uncert_image = ctx.load_texture("uncert-computed", col, Default::default());
+                self.uncert_vec = uncert;
             }
             if let Some(popula) = res.popula {
                 let col = eframe::epaint::ColorImage::from_rgba_unmultiplied(size, &popula);
                 self.popula_image = ctx.load_texture("popula-computed", col, Default::default());
+                self.popula_vec = popula;
             }
             if let Some(kmeans) = res.kmeans {
                 let col = eframe::epaint::ColorImage::from_rgba_unmultiplied(size, &kmeans);
                 self.kmeans_image = ctx.load_texture("kmeans-computed", col, Default::default());
+                self.kmeans_vec = kmeans;
             }
+            self.img_width = res.width;
+            self.img_height = res.height;
 
             ctx.request_repaint();
         }
@@ -201,6 +218,32 @@ impl Scene {
             popula_reducer: None,
             kmeans_reducer: Some(reducer),
         }
+    }
+
+    pub fn save_images(&self, ctx: &egui::Context) {
+        let width = self.img_width;
+        let height = self.img_height;
+        let _ = image::save_buffer(
+            "saved_uncert.png",
+            &self.uncert_vec,
+            width as u32,
+            height as u32,
+            ColorType::Rgba8,
+        );
+        let _ = image::save_buffer(
+            "saved_popula.png",
+            &self.popula_vec,
+            width as u32,
+            height as u32,
+            ColorType::Rgba8,
+        );
+        let _ = image::save_buffer(
+            "saved_kmeans.png",
+            &self.kmeans_vec,
+            width as u32,
+            height as u32,
+            ColorType::Rgba8,
+        );
     }
 
     pub fn uncert_image(&self) -> &TextureHandle {

@@ -134,6 +134,9 @@ impl eframe::App for ColorsApp {
                 ui.group(|ui| {
                     ui.label("Original image");
                     ui.add(egui::Image::new(self.scene.main_image()).max_size(ui.available_size()));
+                    if ui.button("Save images").clicked() {
+                        self.scene.save_images(ctx);
+                    }
                 });
             });
         });
