@@ -133,10 +133,18 @@ impl eframe::App for ColorsApp {
             ui.vertical(|ui| {
                 ui.group(|ui| {
                     ui.label("Original image");
-                    ui.add(egui::Image::new(self.scene.main_image()).max_size(ui.available_size()));
-                    if ui.button("Save images").clicked() {
-                        self.scene.save_images(ctx);
-                    }
+                    ui.add(
+                        egui::Image::new(self.scene.main_image())
+                            .max_height(ui.available_size().y - 50.0),
+                    );
+                    ui.horizontal(|ui| {
+                        if ui.button("Save images").clicked() {
+                            self.scene.save_images();
+                        }
+                        if ui.button("Create custom image").clicked() {
+                            self.scene.create_custom_image(ctx);
+                        }
+                    });
                 });
             });
         });

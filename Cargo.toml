@@ -7,6 +7,7 @@ edition = "2024"
 eframe = {version = "0.33.3", default-features = false, features = ["default_fonts", "x11", "wayland", "glow"]}
 egui-file-dialog = {version = "0.12.0", default-features = false, features=["default_fonts"]}
 image = {version = "0.25.8", default-features = false, features = ["jpeg", "png", "webp"]}
+palette = "0.7.6"
 # rfd = "0.15.4"
 
 [profile.dev]

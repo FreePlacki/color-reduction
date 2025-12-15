@@ -2,9 +2,10 @@ use std::path::PathBuf;
 
 use eframe::{
     CreationContext,
-    egui::{self, ColorImage, Context, TextureHandle},
+    egui::{self, Color32, ColorImage, Context, TextureHandle, TextureOptions, Vec2},
 };
-use image::{ColorType, ImageBuffer, Rgb, Rgba};
+use image::ColorType;
+use palette::{FromColor, Hsv, Srgb};
 
 use crate::{
     kmeans_reducer::KMeansReducer,
@@ -57,7 +58,7 @@ impl Scene {
         let mut s = Self {
             available_images,
             selected_image: 0,
-            n_colors: 10,
+            n_colors: 9,
             diffusion_matrix: Default::default(),
             uncert_image: orig_texture.texture.clone(),
             popula_image: orig_texture.texture.clone(),
@@ -220,7 +221,62 @@ impl Scene {
         }
     }
 
-    pub fn save_images(&self, ctx: &egui::Context) {
+    fn create_circle_image(size: usize) -> egui::ColorImage {
+        let mut pixels = vec![Color32::from_rgb(0, 0, 0); size * size]; // dark background
+
+        // White rectangle in the center
+        let rect_size = size / 2;
+        let rect_start = (size - rect_size) / 2;
+        for y in rect_start..(rect_start + rect_size) {
+            for x in rect_start..(rect_start + rect_size) {
+                pixels[y * size + x] = Color32::from_rgb(255, 255, 255);
+            }
+        }
+
+        // Colored circle inside the rectangle
+        let circle_radius = rect_size / 2;
+        let center = size / 2;
+        for y in rect_start..(rect_start + rect_size) {
+            for x in rect_start..(rect_start + rect_size) {
+                let dx = x as isize - center as isize;
+                let dy = y as isize - center as isize;
+                if dx * dx + dy * dy <= (circle_radius * circle_radius) as isize {
+                    let angle = (dy as f32).atan2(dx as f32).to_degrees();
+                    let hue = ((angle / 10.0).round() * 10.0 + 360.0) % 360.0; // every 10 degrees
+                    let hsv = Hsv::new(hue, 1.0, 1.0);
+                    let rgb: Srgb<f32> = Srgb::from_color(hsv);
+                    pixels[y * size + x] = Color32::from_rgb(
+                        (rgb.red * 255.0) as u8,
+                        (rgb.green * 255.0) as u8,
+                        (rgb.blue * 255.0) as u8,
+                    );
+                }
+            }
+        }
+
+        ColorImage {
+            size: [size, size],
+            pixels,
+            source_size: Vec2::new(size as f32, size as f32),
+        }
+    }
+
+    pub fn create_custom_image(&mut self, ctx: &egui::Context) {
+        let img = Self::create_circle_image(300);
+        self.available_images.push(LoadedImage {
+            texture: ctx.load_texture("custom", img.clone(), TextureOptions::default()),
+            rgba: img
+                .pixels
+                .iter()
+                .flat_map(|p| [p.r(), p.g(), p.b(), p.a()])
+                .collect(),
+        });
+        // select new image
+        self.selected_image = self.available_images.len() - 1;
+        self.compute_all(ctx);
+    }
+
+    pub fn save_images(&self) {
         let width = self.img_width;
         let height = self.img_height;
         let _ = image::save_buffer(
