@@ -124,7 +124,7 @@ impl Reducer for PopularityReducer {
 
         for (i, px) in rgba.chunks_exact(4).enumerate() {
             let q = self.lookup([px[0], px[1], px[2]]);
-            out[i * 4 + 0] = q[0];
+            out[i * 4] = q[0];
             out[i * 4 + 1] = q[1];
             out[i * 4 + 2] = q[2];
             out[i * 4 + 3] = 255;

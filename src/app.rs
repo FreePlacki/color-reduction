@@ -2,17 +2,21 @@ use eframe::{
     CreationContext,
     egui::{self, CentralPanel, Sense, SidePanel, Slider, TopBottomPanel, Ui, Visuals},
 };
+use egui_file_dialog::FileDialog;
 
 use crate::{scene::Scene, uncert_reducer::DiffusionMatrix};
 
 pub struct ColorsApp {
     scene: Scene,
+    file_dialog: FileDialog,
 }
 
 impl ColorsApp {
     pub fn new(cc: &CreationContext) -> Self {
         let scene = Scene::new(cc);
-        Self { scene }
+        let file_dialog =
+            FileDialog::new().add_file_filter_extensions("pictures", vec!["jpeg", "png", "webp"]);
+        Self { scene, file_dialog }
     }
 
     fn image_row(&mut self, ui: &mut Ui) {
@@ -21,7 +25,8 @@ impl ColorsApp {
             if ui
                 .add(
                     egui::Image::new(&img.texture)
-                        .max_size(ui.available_size())
+                        .max_height(100.0)
+                        .maintain_aspect_ratio(true)
                         .sense(Sense::click()),
                 )
                 .clicked()
@@ -99,7 +104,7 @@ impl eframe::App for ColorsApp {
                         ui.horizontal(|ui| {
                             ui.label("Epsilon value: ");
                             let mut eps = self.scene.kmeans_eps();
-                            ui.add(egui::Slider::new(&mut eps, 10.0..=50.0).logarithmic(true));
+                            ui.add(egui::Slider::new(&mut eps, 20.0..=100.0).logarithmic(true));
                             self.scene.update_kmeans_eps(eps);
                         });
                         ui.add(
@@ -115,8 +120,11 @@ impl eframe::App for ColorsApp {
             .min_width(200.0)
             .max_width(500.0)
             .show(ctx, |ui| {
+                if ui.button("From File...").clicked() {
+                    self.file_dialog.pick_file();
+                }
                 ui.label("Choose image");
-                ui.vertical(|ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
                     self.image_row(ui);
                 });
             });
@@ -131,6 +139,10 @@ impl eframe::App for ColorsApp {
         });
 
         self.scene.poll_results(ctx);
+        self.file_dialog.update(ctx);
+        if let Some(path) = self.file_dialog.take_picked() {
+            self.scene.add_image(ctx, path);
+        }
         ctx.request_repaint();
     }
 }

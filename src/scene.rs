@@ -1,6 +1,8 @@
+use std::path::PathBuf;
+
 use eframe::{
     CreationContext,
-    egui::{self, ColorImage, TextureHandle},
+    egui::{self, ColorImage, Context, TextureHandle},
 };
 
 use crate::{
@@ -37,12 +39,12 @@ pub struct Scene {
 
 impl Scene {
     pub fn new(cc: &CreationContext) -> Self {
-        let orig_texture = Self::open_image(cc, "assets/maklo.jpg");
+        let orig_texture = Self::open_image(&cc.egui_ctx, "assets/maklo.jpg");
         let available_images = vec![
             orig_texture.clone(),
-            Self::open_image(cc, "assets/mandel_normalmap.jpg"),
-            Self::open_image(cc, "assets/mini.jpg"),
-            Self::open_image(cc, "assets/wallpaper.jpg"),
+            Self::open_image(&cc.egui_ctx, "assets/mandel_normalmap.jpg"),
+            Self::open_image(&cc.egui_ctx, "assets/mini.jpg"),
+            Self::open_image(&cc.egui_ctx, "assets/wallpaper.jpg"),
         ];
 
         let mut s = Self {
@@ -61,15 +63,18 @@ impl Scene {
         s
     }
 
-    fn open_image(cc: &CreationContext, path: &str) -> LoadedImage {
+    fn open_image(ctx: &Context, path: &str) -> LoadedImage {
         let img = image::open(path).expect("failed to load image");
         let rgba = img.to_rgba8().to_vec();
         let size = [img.width() as usize, img.height() as usize];
         let color_image = ColorImage::from_rgba_unmultiplied(size, &rgba);
-        let texture = cc
-            .egui_ctx
+        let texture = ctx
             .load_texture("orig_image", color_image, Default::default());
         LoadedImage { texture, rgba }
+    }
+
+    pub fn add_image(&mut self, ctx: &Context, path: PathBuf) {
+        self.available_images.push(Self::open_image(ctx, path.to_str().unwrap()));
     }
 
     pub fn select_main_image(&mut self, index: usize, ctx: &egui::Context) {

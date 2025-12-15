@@ -44,7 +44,7 @@ impl Reducer for UncertReducer {
 
         let mut out = vec![0u8; width * height * 4];
         for (i, px) in buf.iter().enumerate() {
-            out[i * 4 + 0] = px[0].clamp(0.0, 255.0) as u8;
+            out[i * 4] = px[0].clamp(0.0, 255.0) as u8;
             out[i * 4 + 1] = px[1].clamp(0.0, 255.0) as u8;
             out[i * 4 + 2] = px[2].clamp(0.0, 255.0) as u8;
             out[i * 4 + 3] = 255;
@@ -119,17 +119,12 @@ impl Palette {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub enum DiffusionMatrix {
+    #[default]
     FloydSteinberg,
     Burkes,
     Stucky,
-}
-
-impl Default for DiffusionMatrix {
-    fn default() -> Self {
-        Self::FloydSteinberg
-    }
 }
 
 impl DiffusionMatrix {
