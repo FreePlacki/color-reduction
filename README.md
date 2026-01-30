@@ -1,4 +1,4 @@
-![](https://github.com/FreePlacki/blob/main/screen.png)
+![](https://github.com/FreePlacki/color-reduction/blob/main/screen.png)
 
 # Color Reduction
 
